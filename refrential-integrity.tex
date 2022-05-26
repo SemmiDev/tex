@@ -1,0 +1,249 @@
+\documentclass[a4paper]{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\usepackage{listings, lstautogobble}
+\lstset{language=SQL,
+                basicstyle=\footnotesize\ttfamily,
+                keywordstyle=\footnotesize\color{blue}\ttfamily,
+		breaklines=true,
+		frame=single,
+		autogobble=true,
+		showstringspaces=false
+}
+\definecolor{light-gray}{gray}{0.95}
+% \newcommand{\code}[1]{\colorbox{light-gray}\allowbreak{\texttt{#1}}}
+\newcommand{\code}[1]{\allowbreak{\texttt{#1}}}
+
+
+\title{Praktikum 4.3}
+
+\author{Praktikum Basis Data\\ Program Studi Manajemen Informatika \\ FMIPA, Universitas Riau }
+
+% \date{\today}
+\date{May 27, 2022}
+
+\begin{document}
+\maketitle
+
+\section{Pengantar}%
+\label{sec:pengantar}
+
+Pada praktikum 4.3 ini, kita akan mengenal dan mempelajari tentang konsep \textit{Refrential Integrity Constraint} /  \textit{Behavior Foreign Key} di dalam SQL (MySQL).
+
+\section{Refrential Integrity Constraint}%
+\label{sec:section_name}
+
+\textit{Refrential Integrity Constraint} merupakan aturan yang digunakan untuk menjaga kualitas dari informasi yang disimpan di \textit{database}. \textit{Refrential  Integrity Constraint} akan membantu kita untuk memastikan untuk tidak terjadinya kerusakan atau hilangnya \textit{integritas data} saat proses \textit{Insert}, \textit{Update}, dan \textit{Delete}.
+
+Misalnya ketika suatu tabel berelasi dengan tabel lain dan kita menghapus salah satu data yang berelasi, MySQL akan menolak operasi delete tersebut. Hal itu tidak bisa dilakukan karena statusnya \textit{restrict} (nanti kita akan bahas).  Kita juga bisa mengubah fitur ini jika kita mau, ada banyak hal yang bisa dilakukan ketika data berelasi dihapus, defaultnya memang akan ditolak (RESTRICT)
+
+Untuk menggunakan fitur \textit{Referential Integrity} tipe dari \textit{store engine} tabel yang digunakan adalah yang support transaksional, salah satu contoh di MySQL yang support transaksional adalah \textit{store engine InnoDB}. 
+
+\section{Jenis-Jenis Refrential Integrity Constraint / Behavior Foreign Key}%
+\label{sec:section_name}
+\begin{figure}[htpb]
+	\centering
+	\includegraphics[width=0.8\linewidth]{pic/behavior-fk.png}
+\end{figure}
+
+
+\begin{enumerate}
+	\item Restrict	
+
+\textit{Restrict} dalam bahasa indonesia adalah membatasi, maksudnya adalah data pada tabel induk tidak bisa di \textit{delete} atau di \textit{update} (reference key nya) bila data tersebut memiliki relasi pada tabel lain.
+
+\begin{lstlisting}
+CREATE TABLE products (
+    id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    price INT(11),
+    PRIMARY KEY(id)
+) ENGINE=INNODB;
+
+CREATE TABLE customers (
+    id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id)
+) ENGINE=INNODB;
+
+CREATE TABLE product_order (
+    id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    customer_id INT NOT NULL,
+    PRIMARY KEY(id)
+) ENGINE=INNODB;
+
+ALTER TABLE product_order 
+	ADD CONSTRAINT fk_po_customers 
+	FOREIGN KEY (customer_id) REFERENCES customers(id)
+	ON DELETE RESTRICT ON UPDATE RESTRICT;
+ALTER TABLE product_order 
+	ADD CONSTRAINT fk_po_products
+	FOREIGN KEY (product_id) REFERENCES products(id)
+	ON DELETE RESTRICT ON UPDATE RESTRICT;
+\end{lstlisting}
+
+\textit{Restrict} adalah sintak yang digunakan untuk menambahkan \textit{refrential integrity constraint} dengan tipe \textit{restrict}. Sekarang kita coba \textit{insert} data kedalam tabel tersebut
+
+\begin{lstlisting}
+INSERT INTO products(id,name,price) VALUES (1,'sunlight',15000);
+INSERT INTO customers(id,name) VALUES (1,'vivianika');
+INSERT INTO product_order(product_id,customer_id) VALUES(1,1);
+\end{lstlisting}
+
+Kemudian kita akan coba  \textit{update} (bukan update barisnya ya, tapi \textit{primary key reference}) dan \textit{delete} data yang ada pada tabel parent (\textit{products} dan \textit{customers}). Hasilnya:
+
+\begin{lstlisting}
+MariaDB [testing]> UPDATE products SET id=5 WHERE id=1;
+ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`testing`.`product_order`, CONSTRAINT `product_order_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`))
+
+MariaDB [testing]> DELETE FROM customers WHERE id=1;
+ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`testing`.`product_order`, CONSTRAINT `product_order_ibfk_2` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`))
+
+\end{lstlisting}
+
+	\item Cascade
+
+\textit{Cascade} dalam bahasa Indonesia adalah bertingkat, maksudnya adalah bila data pada tabel induk di \textit{delete} atau di \textit{update} maka secara otomatis data pada tabel lain yang \code{memiliki relasi} akan di \textit{delete} atau di \textit{update} juga.
+
+Sekarang kita ganti behavior \textit{update} dan \textit{delete} dari table sebelumnya menjadi  \code{Cascade}
+\begin{lstlisting}
+ALTER TABLE product_order DROP FOREIGN KEY fk_po_customers;
+ALTER TABLE product_order DROP FOREIGN KEY fk_po_products;
+
+ALTER TABLE product_order
+	ADD CONSTRAINT fk_po_customers 
+	FOREIGN KEY (customer_id) REFERENCES customers(id)
+	ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE product_order 
+	ADD CONSTRAINT fk_po_products
+	FOREIGN KEY (product_id) REFERENCES products(id)
+	ON DELETE CASCADE ON UPDATE CASCADE;
+\end{lstlisting}
+
+Kemudian kita akan coba  \textit{update} (bukan update barisnya ya, tapi \textit{primary key reference}) dan \textit{delete} data yang ada pada tabel parent (\textit{products} dan \textit{customers}). Hasilnya:
+
+\begin{lstlisting}
+MariaDB [testing]> UPDATE products SET id=5 WHERE id=1;
+Query OK, 1 row affected (0.050 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+MariaDB [testing]> SELECT * FROM product_order;
++----+------------+-------------+
+| id | product_id | customer_id |
++----+------------+-------------+
+|  1 |          5 |           1 |
++----+------------+-------------+
+1 row in set (0.001 sec)
+
+
+MariaDB [testing]> DELETE FROM customers WHERE id=1;
+Query OK, 1 row affected (0.048 sec)
+
+MariaDB [testing]> SELECT * FROM product_order;
+Empty set (0.001 sec)
+
+\end{lstlisting}
+
+	\item No Action
+
+\textit{No Action} ini setara dengan RESTRICT. MySQL menolak operasi delete atau update untuk tabel induk jika ada referensi dengan tabel lainnya. 
+
+Sekarang kita ganti behavior \textit{update} dan \textit{delete} dari table sebelumnya menjadi \code{No Action}
+\begin{lstlisting}
+
+ALTER TABLE product_order DROP FOREIGN KEY fk_po_customers;
+ALTER TABLE product_order DROP FOREIGN KEY fk_po_products;
+
+ALTER TABLE product_order
+	ADD CONSTRAINT fk_po_customers 
+	FOREIGN KEY (customer_id) REFERENCES customers(id)
+	ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE product_order 
+	ADD CONSTRAINT fk_po_products
+	FOREIGN KEY (product_id) REFERENCES products(id)
+	ON DELETE NO ACTION ON UPDATE NO ACTION;
+\end{lstlisting}
+
+Kemudian kita akan coba  \textit{update} (bukan update barisnya ya, tapi \textit{primary key reference}) dan \textit{delete} data yang ada pada tabel parent (\textit{products} dan \textit{customers}). Hasilnya:
+
+\begin{lstlisting}
+MariaDB [testing]> UPDATE customers SET id=4 WHERE id=1;
+ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`testing`.`product_order`, CONSTRAINT `fk_po_customers` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION)
+MariaDB [testing]> DELETE FROM products WHERE id=1;
+ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`testing`.`product_order`, CONSTRAINT `fk_po_products` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION)
+MariaDB [testing]> 
+\end{lstlisting}
+
+
+	\item Set Null
+
+\textit{Set null} adalah menghapus atau meng-update baris data dalam tabel induk dan men-set kolom atau beberapa kolom dalam tabel anak menjadi \textit{null}. hal ini akan valid jika kolom \textit{foreign key} tidak \textit{not null}. 
+
+Sekarang kita ganti behavior \textit{update} dan \textit{delete} dari table sebelumnya menjadi \code{SET NULL}
+\begin{lstlisting}
+DROP TABLE product_order;
+
+CREATE TABLE product_order (
+    id INT NOT NULL AUTO_INCREMENT,
+    product_id INT,
+    customer_id INT,
+    PRIMARY KEY(id)
+) ENGINE=INNODB;
+
+ALTER TABLE product_order
+	ADD CONSTRAINT fk_po_customers 
+	FOREIGN KEY (customer_id) REFERENCES customers(id)
+	ON DELETE SET NULL ON UPDATE SET NULL;
+ALTER TABLE product_order 
+	ADD CONSTRAINT fk_po_products
+	FOREIGN KEY (product_id) REFERENCES products(id)
+	ON DELETE SET NULL ON UPDATE SET NULL;
+
+INSERT INTO product_order(product_id,customer_id) VALUES(1,1);
+\end{lstlisting}
+
+Kemudian kita akan coba  \textit{update} (bukan update barisnya ya, tapi \textit{primary key reference}) dan \textit{delete} data yang ada pada tabel parent (\textit{products} dan \textit{customers}). Hasilnya:
+
+\begin{lstlisting}
+MariaDB [testing]> SELECT * FROM product_order;
++----+------------+-------------+
+| id | product_id | customer_id |
++----+------------+-------------+
+|  1 |          1 |           1 |
++----+------------+-------------+
+1 row in set (0.001 sec)
+
+MariaDB [testing]> UPDATE products SET id=5 where id=1;
+Query OK, 1 row affected (0.045 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+MariaDB [testing]> SELECT * FROM product_order;
++----+------------+-------------+
+| id | product_id | customer_id |
++----+------------+-------------+
+|  1 |       NULL |           1 |
++----+------------+-------------+
+1 row in set (0.001 sec)
+
+MariaDB [testing]> DELETE FROM customers WHERE id=1;
+Query OK, 1 row affected (0.056 sec)
+
+MariaDB [testing]> SELECT * FROM product_order;
++----+------------+-------------+
+| id | product_id | customer_id |
++----+------------+-------------+
+|  1 |       NULL |        NULL |
++----+------------+-------------+
+1 row in set (0.001 sec)
+\end{lstlisting}
+
+\end{enumerate}
+\end{document}
