@@ -35,8 +35,6 @@
 \section{Pengantar}%
 \label{sec:pengantar}
 
-test di branch baru
-
 Pada praktikum 4.3 ini, kita akan mengenal dan mempelajari tentang konsep \textit{Refrential Integrity Constraint} /  \textit{Behavior Foreign Key} di dalam SQL (MySQL).
 
 \section{Refrential Integrity Constraint}%
@@ -95,8 +93,8 @@ ALTER TABLE product_order
 \textit{Restrict} adalah sintak yang digunakan untuk menambahkan \textit{refrential integrity constraint} dengan tipe \textit{restrict}. Sekarang kita coba \textit{insert} data kedalam tabel tersebut
 
 \begin{lstlisting}
-INSERT INTO products(id,name,price) VALUES (1,'sunlight',15000);
-INSERT INTO customers(id,name) VALUES (1,'vivianika');
+INSERT INTO products(id,name,price) VALUES (1,'Sunlight',15000);
+INSERT INTO customers(id,name) VALUES (1,'Vivianika Nathania Harsan');
 INSERT INTO product_order(product_id,customer_id) VALUES(1,1);
 \end{lstlisting}
 
