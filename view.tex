@@ -166,11 +166,45 @@ Maka akan menampilkan hasil berikut:
 \section{Drop Views}%
 \label{sec:section_name}
 
+Statemen DROP VIEW akan menghapus VIEW dari database. Berikut sintaks dasar dari statemen DROP VIEW
+
+
+\begin{lstlisting}
+DROP VIEW [IF EXISTS] view_name;
+\end{lstlisting}
+
+Untuk menghapus beberapa VIEW dalam satu statemen, Kita bisa menggunakan sintaks berikut:
+\begin{lstlisting}
+DROP VIEW [IF EXISTS] view_name1 [,view_name2]...;
+\end{lstlisting}
+
+Sekarang kita coba menghapus view customerPayments yang telah kita buat sebelumnya
+
+\begin{lstlisting}
+DROP VIEW IF EXISTS customerPayments;
+\end{lstlisting}
+
+
 \section{Show Views}%
 \label{sec:show_views}
 
+MySQL memperlakukan VIEWS sebagai tabel dengan tipe VIEW. Oleh karena itu, untuk menampilkan semua VIEWS dalam database saat ini, KIta menggunakan pernyataan SHOW FULL TABLES:
+
+\begin{lstlisting}
+SHOW FULL TABLES 
+WHERE table_type = 'VIEW';
+\end{lstlisting}
+
+
 \section{Rename Views}%
 \label{sec:rename_views}
+
+Berikut sintaks untuk mengubah nama VIEW:
+
+\begin{lstlisting}
+RENAME TABLE productPayments
+TO newProductPayments;
+\end{lstlisting}
 
 
 \end{document}
